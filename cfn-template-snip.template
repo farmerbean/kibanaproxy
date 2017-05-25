@@ -1,0 +1,86 @@
+                         "files": {
+                            "/etc/nginx/nginx.conf": {
+                                "content": {
+                                    "Fn::Join": [
+                                        "",
+                                        [
+                                            "# ",
+                                            {
+                                                "Fn::ImportValue": {
+                                                    "Fn::Sub": "${ElasticsearchStack}-ElasticsearchDomainEndpointURL"
+                                                }
+                                            },
+                                            "\n",
+                                            "worker_processes auto;\n",
+                                            "error_log /var/log/nginx/error.log;\n",
+                                            "pid /var/run/nginx.pid;\n",
+                                            "include /usr/share/nginx/modules/*.conf;\n\n",
+                                            "events {\n",
+                                            "    worker_connections 1024;\n",
+                                            "}\n\n",
+                                            "http {\n",
+                                            "    log_format  main  '$remote_addr - $remote_user [$time_local] \"$request\" '\n",
+                                            "   '$status $body_bytes_sent \"$http_referer\" '\n",
+                                            "   '\"$http_user_agent\" \"$http_x_forwarded_for\"';\n\n",
+                                            "    access_log  /var/log/nginx/access.log  main;\n\n",
+                                            "    sendfile            on;\n",
+                                            "    tcp_nopush          on;\n",
+                                            "    tcp_nodelay         on;\n",
+                                            "    keepalive_timeout   65;\n",
+                                            "    types_hash_max_size 2048;\n",
+                                            "    include             /etc/nginx/mime.types;\n",
+                                            "    default_type        application/octet-stream;\n\n",
+                                            "    include /etc/nginx/conf.d/*.conf;\n\n",
+                                            "server {\n",
+                                            "      listen 80 default_server;\n",
+                                            "      location / {\n\n",
+                                            "      proxy_set_header   X-Forwarded-For $remote_addr;\n",
+                                            "      proxy_set_header   Host $http_host;\n",
+                                            "      proxy_pass https://",
+                                            {
+                                                "Fn::ImportValue": {
+                                                    "Fn::Sub": "${ElasticsearchStack}-ElasticsearchDomainEndpointURL"
+                                                }
+                                            },
+                                            ";\n",
+                                            "      }\n\n",
+                                            "      location ~ ^(/_plugin.*$|/kibana.*$) {\n\n",
+                                            "        rewrite ^/kibana(.*) /_plugin/kibana/$1 break;\n",
+                                            "        proxy_set_header   X-Forwarded-For $remote_addr;\n",
+                                            "        proxy_set_header   Host $http_host;\n",
+                                            "        proxy_set_header Connection \"Keep-Alive\";\n",
+                                            "        proxy_set_header Proxy-Connection \"Keep-Alive\";\n",
+                                            "        proxy_set_header Authorization \"\";\n\n",
+                                            "        proxy_pass https://",
+                                            {
+                                                "Fn::ImportValue": {
+                                                    "Fn::Sub": "${ElasticsearchStack}-ElasticsearchDomainEndpointURL"
+                                                }
+                                            },
+                                            ";\n",
+                                            "        proxy_redirect https://",
+                                            {
+                                                "Fn::ImportValue": {
+                                                    "Fn::Sub": "${ElasticsearchStack}-ElasticsearchDomainEndpointURL"
+                                                }
+                                            },
+                                            "/_plugin/kibana/ http://$server_addr/kibana/;\n",
+                                            "        auth_basic \"Username and Password are required\";\n",
+                                            "        auth_basic_user_file /etc/nginx/.htpasswd;\n",
+                                            "}\n\n",
+                                            "        location /health {\n",
+                                            "            access_log off;\n",
+                                            "            return 200 'You Know, for Health';\n",
+                                            "            # Comment in/out the line below for browser healthcheck testing\n",
+                                            "            add_header Content-Type text/plain; \n",
+                                            "        }\n",
+                                            "        }\n",
+                                            "  }\n"
+                                        ]
+                                    ]
+                                },
+                                "owner": "root",
+                                "group": "root",
+                                "mode": "000400"
+                            }
+                        },
